@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVER_IP = credentials('prod-server-ip')
+    }
+    stages {
+        stage('Setup') {
+            steps {
+                sh "pip install -r 02-single-server-deployment/requirements.txt"
+            }
+        }
+        stage('Test') {
+            steps {
+                sh "echo 'done'"
+            }
+        }
+
+        stage('Package code') {
+            steps {
+                sh "zip -r myapp.zip 02-single-server-deployment/* -x '*.git*'"
+                sh "ls -lart 02-single-server-deployment/"
+            }
+        }
+
+        stage('Deploy to Prod') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'MY_SSH_KEY', usernameVariable: 'username')]) {
+                    sh '''
+                    scp -i $MY_SSH_KEY -o StrictHostKeyChecking=no myapp.zip  ${username}@${SERVER_IP}:/home/ubuntu/
+                    ssh -i $MY_SSH_KEY -o StrictHostKeyChecking=no ${username}@${SERVER_IP} << EOF
+                        unzip -o /home/ubuntu/myapp.zip -d /home/ubuntu/
+                        cp -r /home/ubuntu/02-single-server-deployment/* /home/ubuntu/app1/
+                        source /home/ubuntu/app1/venv/bin/activate
+                        cd /home/ubuntu/app1/
+                        pip install -r requirements.txt
+                        sudo systemctl restart flaskapp.service
+EOF
+                    '''
+                }
+            }
+        }
+       
+        
+       
+        
+    }
+}
