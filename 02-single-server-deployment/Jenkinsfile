@@ -30,7 +30,7 @@ pipeline {
                     scp -i $MY_SSH_KEY -o StrictHostKeyChecking=no myapp.zip  ${username}@${SERVER_IP}:/home/ubuntu/
                     ssh -i $MY_SSH_KEY -o StrictHostKeyChecking=no ${username}@${SERVER_IP} << EOF
                         unzip -o /home/ubuntu/myapp.zip -d /home/ubuntu/app1/
-                        source /home/ubuntu/app1/venv/bin/activate
+                        source /home/ubuntu/app1/venv/bin/python3
                         cd /home/ubuntu/app1/
                         pip install -r requirements.txt
                         sudo systemctl restart flaskapp.service
